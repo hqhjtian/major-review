@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>专业课复习器 V1.5</V1></title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="app">
+    <header>
+      <h1>专业课复习器 V1.5</h1>
+      <p>把整套复习资料拆成知识板块，逐块复习，记录掌握程度。</p>
+    </header>
+
+    <main class="layout">
+      <section class="panel input-panel">
+        <h2>1. 输入复习资料</h2>
+        <p class="hint">
+          建议保留标题层级，例如：一、…… / （一）…… / 1. …… / （1）……
+        </p>
+
+        <textarea id="sourceText" placeholder="把你的专业课复习资料粘贴到这里。"></textarea>
+
+        <div class="button-row">
+          <button id="parseBtn">解析资料</button>
+          <button id="clearBtn" class="secondary">清空全部</button>
+        </div>
+
+        <div class="stats">
+          <span>总板块：<strong id="totalCount">0</strong></span>
+          <span>掌握：<strong id="masteredCount">0</strong></span>
+          <span>模糊：<strong id="fuzzyCount">0</strong></span>
+          <span>不会：<strong id="unknownCount">0</strong></span>
+        </div>
+        <div class="filter-box">
+  <p class="hint">筛选复习：</p>
+  <div class="button-row">
+    <button id="filterAll" class="secondary filter-btn active-filter">全部</button>
+    <button id="filterUnknown" class="secondary filter-btn">只看不会</button>
+    <button id="filterFuzzy" class="secondary filter-btn">只看模糊</button>
+    <button id="filterMastered" class="secondary filter-btn">只看掌握</button>
+    <button id="filterNone" class="secondary filter-btn">只看未标记</button>
+  </div>
+</div>
+<div class="review-box">
+  <p class="hint">车轮式复习：</p>
+  <div class="button-row">
+    <button id="generateReviewBtn">生成今日复习队列</button>
+    <button id="exitReviewBtn" class="secondary">退出复习队列</button>
+  </div>
+  <div id="reviewSummary" class="review-summary hidden"></div>
+</div>
+      </section>
+
+      <section class="panel tree-panel">
+        <h2>2. 结构目录</h2>
+        <div id="treeView" class="tree empty">解析后会在这里显示目录。</div>
+      </section>
+
+      <section class="panel study-panel">
+        <h2>3. 当前学习板块</h2>
+
+        <div id="emptyState" class="empty">
+          还没有学习内容。请先在左侧粘贴资料并点击“解析资料”。
+        </div>
+
+        <div id="cardArea" class="card-area hidden">
+          <div class="card-meta">
+            <span id="cardIndex">0 / 0</span>
+            <span id="cardStatus" class="status none">未标记</span>
+          </div>
+
+          <h3 id="cardTitle"></h3>
+          <div id="cardPath" class="card-path"></div>
+          <div id="cardContent" class="card-content"></div>
+          <div class="button-row">
+  <button id="toggleAnswerBtn" class="secondary">隐藏内容，先背诵</button>
+</div>
+
+          <div class="button-row">
+            <button id="prevBtn" class="secondary">上一块</button>
+            <button id="nextBtn" class="secondary">下一块</button>
+          </div>
+
+          <div class="button-row status-buttons">
+            <button id="markMastered" class="mastered">掌握</button>
+            <button id="markFuzzy" class="fuzzy">模糊</button>
+            <button id="markUnknown" class="unknown">不会</button>
+          </div>
+
+          <div class="button-row">
+            <button id="reviewChapterBtn">查看当前大标题完整内容</button>
+          </div>
+
+          <div id="chapterReview" class="chapter-review hidden"></div>
+          <div id="chapterCompleteBox" class="chapter-complete hidden">
+  <h3 id="chapterCompleteTitle">章节完成</h3>
+  <div id="chapterCompleteStats"></div>
+
+  <div class="button-row">
+    <button id="showCompletedChapterBtn">查看整章回顾</button>
+    <button id="closeCompletedChapterBtn" class="secondary">先不看</button>
+  </div>
+</div>
+        </div>
+      </section>
+      <section class="panel progress-panel">
+  <h2>4. 薄弱清单与章节进度</h2>
+
+  <div class="button-row">
+    <button id="refreshProgressBtn" class="secondary">刷新统计</button>
+    <button id="jumpWeakestBtn">跳到最薄弱板块</button>
+  </div>
+
+  <div id="overallProgress" class="overall-progress empty">
+    解析资料并标记掌握程度后，这里会显示整体进度。
+  </div>
+
+  <h3 class="sub-title">优先复习清单</h3>
+  <div id="weakList" class="weak-list empty">
+    暂无薄弱清单。
+  </div>
+
+  <h3 class="sub-title">按大标题统计</h3>
+  <div id="chapterStats" class="chapter-stats empty">
+    暂无章节统计。
+  </div>
+</section>
+    </main>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

@@ -58,7 +58,16 @@ const chapterCompleteTitle = document.getElementById("chapterCompleteTitle");
 const chapterCompleteStats = document.getElementById("chapterCompleteStats");
 const showCompletedChapterBtn = document.getElementById("showCompletedChapterBtn");
 const closeCompletedChapterBtn = document.getElementById("closeCompletedChapterBtn");
+const promptChoiceBtn = document.getElementById("promptChoiceBtn");
+const promptBlankBtn = document.getElementById("promptBlankBtn");
+const promptShortBtn = document.getElementById("promptShortBtn");
+const promptMixedBtn = document.getElementById("promptMixedBtn");
+const promptOutput = document.getElementById("promptOutput");
+const copyPromptBtn = document.getElementById("copyPromptBtn");
 
+const scoreInput = document.getElementById("scoreInput");
+const applyScoreBtn = document.getElementById("applyScoreBtn");
+const scoreHint = document.getElementById("scoreHint");
 parseBtn.addEventListener("click", () => {
   const text = sourceText.value.trim();
   if (!text) {
@@ -176,6 +185,43 @@ showCompletedChapterBtn.addEventListener("click", () => {
 
 closeCompletedChapterBtn.addEventListener("click", () => {
   chapterCompleteBox.classList.add("hidden");
+});
+promptChoiceBtn.addEventListener("click", () => {
+  generatePrompt("choice");
+});
+
+promptBlankBtn.addEventListener("click", () => {
+  generatePrompt("blank");
+});
+
+promptShortBtn.addEventListener("click", () => {
+  generatePrompt("short");
+});
+
+promptMixedBtn.addEventListener("click", () => {
+  generatePrompt("mixed");
+});
+
+copyPromptBtn.addEventListener("click", async () => {
+  const text = promptOutput.value.trim();
+
+  if (!text) {
+    alert("还没有可复制的 Prompt。");
+    return;
+  }
+
+  try {
+    await navigator.clipboard.writeText(text);
+    alert("Prompt 已复制。");
+  } catch (error) {
+    promptOutput.select();
+    document.execCommand("copy");
+    alert("Prompt 已复制。");
+  }
+});
+
+applyScoreBtn.addEventListener("click", () => {
+  applyScoreToCurrentBlock();
 });
 reviewChapterBtn.addEventListener("click", () => {
   if (chapterReview.classList.contains("hidden")) {
@@ -840,6 +886,145 @@ function loadData() {
   } catch (error) {
     console.error("读取本地记录失败：", error);
   }
+}
+function generatePrompt(type) {
+  if (!blocks[currentIndex]) {
+    alert("当前没有学习板块。");
+    return;
+  }
+
+  const block = blocks[currentIndex];
+  const pathText = block.path.join(" > ");
+  const contentText = block.content.trim();
+
+  if (!contentText) {
+    alert("当前板块没有正文内容，无法生成 Prompt。");
+    return;
+  }
+
+  let taskText = "";
+
+  if (type === "choice") {
+    taskText = `
+请基于下面的专业课知识点，生成 5 道大学本科期末考试难度的单项选择题。
+
+要求：
+1. 每题 4 个选项，只有 1 个正确答案。
+2. 难度接近普通本科心理学/教育学/专业课期末闭卷考试。
+3. 不要只考机械背诵，要包含概念辨析、易混点、理解应用。
+4. 每题给出正确答案、解析和考查知识点。
+5. 干扰项要有迷惑性，但不能故意错误或超纲。
+`;
+  }
+
+  if (type === "blank") {
+    taskText = `
+请基于下面的专业课知识点，生成 8 道大学本科期末考试难度的填空题。
+
+要求：
+1. 重点考查核心概念、关键词、分类、代表人物、理论关系。
+2. 空格设置要符合期末考试常见考法，不要过度机械。
+3. 给出标准答案。
+4. 对容易混淆的地方给出简短提示。
+`;
+  }
+
+  if (type === "short") {
+    taskText = `
+请基于下面的专业课知识点，生成 3 道大学本科期末考试难度的简答题。
+
+要求：
+1. 题目符合期末笔试风格。
+2. 每道题给出参考答案。
+3. 参考答案要适合背诵，结构清晰，分点表达。
+4. 如果涉及概念、特点、功能、意义、区别，请优先考查。
+5. 标出每道题的答题关键词。
+`;
+  }
+
+  if (type === "mixed") {
+    taskText = `
+请基于下面的专业课知识点，生成一组大学本科期末考试风格的综合自测题。
+
+题型包括：
+1. 单项选择题 5 道；
+2. 填空题 5 道；
+3. 判断题 5 道；
+4. 名词解释 2 道；
+5. 简答题 2 道。
+
+要求：
+1. 难度接近期末闭卷考试。
+2. 覆盖核心概念、易混点、理解应用和主观题表达。
+3. 所有题目都要给出答案和解析。
+4. 主观题答案要写成可背诵版本。
+5. 最后给出“这个知识点应该重点背什么”的复习建议。
+`;
+  }
+
+  const finalPrompt = `${taskText}
+
+【知识点位置】
+${pathText}
+
+【知识点原文】
+${contentText}
+
+【输出格式】
+请按以下结构输出：
+一、题目
+二、答案
+三、解析
+四、期末复习建议
+
+【限制】
+1. 主要依据我提供的知识点出题。
+2. 不要编造与原文无关的内容。
+3. 如果需要补充背景知识，请明确标注“补充理解”。
+4. 出题难度定位为大学本科期末考试，不要太简单，也不要研究生考试化。`;
+
+  promptOutput.value = finalPrompt.trim();
+}
+
+function applyScoreToCurrentBlock() {
+  if (!blocks[currentIndex]) {
+    alert("当前没有学习板块。");
+    return;
+  }
+
+  const rawScore = scoreInput.value.trim();
+
+  if (rawScore === "") {
+    alert("请先输入正确率。");
+    return;
+  }
+
+  const score = Number(rawScore);
+
+  if (Number.isNaN(score) || score < 0 || score > 100) {
+    alert("请输入 0 到 100 之间的数字。");
+    return;
+  }
+
+  let newStatus = "unknown";
+  let message = "";
+
+  if (score >= 80) {
+    newStatus = "mastered";
+    message = `正确率 ${score}%：已自动标记为“掌握”。`;
+  } else if (score >= 50) {
+    newStatus = "fuzzy";
+    message = `正确率 ${score}%：已自动标记为“模糊”。`;
+  } else {
+    newStatus = "unknown";
+    message = `正确率 ${score}%：已自动标记为“不会”。`;
+  }
+
+  blocks[currentIndex].status = newStatus;
+  scoreHint.textContent = message;
+
+  saveData();
+  renderAll();
 }
 loadData();
 renderAll();

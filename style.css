@@ -392,3 +392,51 @@ button.unknown {
 .chapter-complete strong {
   color: #166534;
 }
+.ai-box,
+.score-box {
+  margin-top: 16px;
+  padding: 14px;
+  background: #f8fafc;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+}
+
+.ai-box h3,
+.score-box h3 {
+  margin: 0 0 8px;
+  font-size: 16px;
+}
+
+.prompt-output {
+  width: 100%;
+  min-height: 180px;
+  margin-top: 12px;
+  resize: vertical;
+  padding: 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 12px;
+  font-size: 14px;
+  line-height: 1.7;
+  font-family: "Microsoft YaHei", Arial, sans-serif;
+}
+
+.score-row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+
+.score-row input {
+  width: 180px;
+  padding: 10px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+  font-size: 14px;
+}
+
+.score-row input:focus {
+  outline: none;
+  border-color: #4f46e5;
+}

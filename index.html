@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>专业课复习器 V1.5</V1></title>
+  <title>专业课复习器 V1.5</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -92,7 +92,39 @@
           <div class="button-row">
             <button id="reviewChapterBtn">查看当前大标题完整内容</button>
           </div>
+          <div class="ai-box">
+  <h3>AI 出题 Prompt</h3>
+  <p class="hint">
+    根据当前知识点生成可复制给 DeepSeek / ChatGPT 的提示词。先不接 API，避免花钱和配置复杂。
+  </p>
 
+  <div class="button-row">
+    <button id="promptChoiceBtn" class="secondary">生成选择题 Prompt</button>
+    <button id="promptBlankBtn" class="secondary">生成填空题 Prompt</button>
+    <button id="promptShortBtn" class="secondary">生成简答题 Prompt</button>
+    <button id="promptMixedBtn">生成综合自测 Prompt</button>
+  </div>
+
+  <textarea id="promptOutput" class="prompt-output" placeholder="生成的 Prompt 会出现在这里。"></textarea>
+
+  <div class="button-row">
+    <button id="copyPromptBtn" class="secondary">复制 Prompt</button>
+  </div>
+</div>
+
+<div class="score-box">
+  <h3>练习结果录入</h3>
+  <p class="hint">
+    做完 AI 生成的题后，把正确率填进来，系统会自动更新这个知识点的掌握程度。
+  </p>
+
+  <div class="score-row">
+    <input id="scoreInput" type="number" min="0" max="100" placeholder="输入正确率，例如 75" />
+    <button id="applyScoreBtn">根据正确率更新状态</button>
+  </div>
+
+  <p id="scoreHint" class="hint"></p>
+</div>
           <div id="chapterReview" class="chapter-review hidden"></div>
           <div id="chapterCompleteBox" class="chapter-complete hidden">
   <h3 id="chapterCompleteTitle">章节完成</h3>

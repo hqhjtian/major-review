@@ -440,3 +440,75 @@ button.unknown {
   outline: none;
   border-color: #4f46e5;
 }
+.bookshelf-box {
+  margin-bottom: 16px;
+  padding: 14px;
+  background: #f8fafc;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+}
+
+.bookshelf-box h3 {
+  margin: 0 0 8px;
+  font-size: 16px;
+}
+
+.book-title-input {
+  width: 100%;
+  padding: 10px 12px;
+  margin-top: 8px;
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+  font-size: 14px;
+}
+
+.book-title-input:focus {
+  outline: none;
+  border-color: #4f46e5;
+}
+
+.book-list {
+  margin-top: 12px;
+  max-height: 260px;
+  overflow: auto;
+}
+
+.book-item {
+  padding: 10px 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  background: white;
+  margin-bottom: 8px;
+  cursor: pointer;
+}
+
+.book-item:hover {
+  background: #eef2ff;
+}
+
+.book-item.active {
+  border-color: #4f46e5;
+  background: #eef2ff;
+}
+
+.book-item-title {
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.book-item-meta {
+  font-size: 13px;
+  color: #666;
+  line-height: 1.5;
+}
+
+.book-item-actions {
+  margin-top: 8px;
+}
+
+.book-delete-btn {
+  background: #fee2e2;
+  color: #991b1b;
+  padding: 6px 10px;
+  font-size: 12px;
+}

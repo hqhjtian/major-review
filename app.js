@@ -1,5 +1,5 @@
 const STORAGE_KEY = "majorReviewV1";
-
+const BOOKSHELF_KEY = "majorReviewBookshelfV1";
 let blocks = [];
 let currentIndex = 0;
 let currentFilter = "all";
@@ -9,7 +9,8 @@ let isContentHidden = false;
 let reviewMode = false;
 let reviewQueue = [];
 let completedChapterNotified = [];
-
+let books = [];
+let currentBookId = null;
 const sourceText = document.getElementById("sourceText");
 const parseBtn = document.getElementById("parseBtn");
 const clearBtn = document.getElementById("clearBtn");
@@ -58,6 +59,10 @@ const chapterCompleteTitle = document.getElementById("chapterCompleteTitle");
 const chapterCompleteStats = document.getElementById("chapterCompleteStats");
 const showCompletedChapterBtn = document.getElementById("showCompletedChapterBtn");
 const closeCompletedChapterBtn = document.getElementById("closeCompletedChapterBtn");
+const bookTitleInput = document.getElementById("bookTitleInput");
+const saveCurrentBookBtn = document.getElementById("saveCurrentBookBtn");
+const newBlankBookBtn = document.getElementById("newBlankBookBtn");
+const bookList = document.getElementById("bookList");
 const promptChoiceBtn = document.getElementById("promptChoiceBtn");
 const promptBlankBtn = document.getElementById("promptBlankBtn");
 const promptShortBtn = document.getElementById("promptShortBtn");
@@ -81,19 +86,25 @@ parseBtn.addEventListener("click", () => {
   isContentHidden = false;
   reviewMode = false;
   reviewQueue = [];
-    completedChapterNotified = [];
+  completedChapterNotified = [];
 
   if (blocks.length === 0) {
     alert("没有识别到有效板块。请检查标题格式。");
     return;
   }
 
-  saveData();
+  // 每次解析新资料，都自动保存成一本新的复习本，避免覆盖旧资料
+  currentBookId = createId();
+  const title = getBookTitleFromInputOrText(text);
+
+  bookTitleInput.value = title;
+  saveCurrentBookToShelf(title);
+
   renderAll();
 });
 
 clearBtn.addEventListener("click", () => {
-  if (!confirm("确定清空全部资料和学习记录吗？")) return;
+  if (!confirm("确定清空当前工作区吗？书架里已保存的复习本不会被删除。")) return;
 
   blocks = [];
   currentIndex = 0;
@@ -101,8 +112,10 @@ clearBtn.addEventListener("click", () => {
   isContentHidden = false;
   reviewMode = false;
   reviewQueue = [];
-    completedChapterNotified = [];
+  completedChapterNotified = [];
+  currentBookId = null;
   sourceText.value = "";
+  bookTitleInput.value = "";
   localStorage.removeItem(STORAGE_KEY);
   renderAll();
 });
@@ -185,6 +198,32 @@ showCompletedChapterBtn.addEventListener("click", () => {
 
 closeCompletedChapterBtn.addEventListener("click", () => {
   chapterCompleteBox.classList.add("hidden");
+});
+saveCurrentBookBtn.addEventListener("click", () => {
+  if (blocks.length === 0 && !sourceText.value.trim()) {
+    alert("当前没有可保存的复习内容。");
+    return;
+  }
+
+  const title = bookTitleInput.value.trim() || getBookTitleFromInputOrText(sourceText.value);
+  saveCurrentBookToShelf(title);
+  alert("当前复习本已保存到书架。");
+});
+
+newBlankBookBtn.addEventListener("click", () => {
+  if (!confirm("确定新建空白复习本吗？当前未保存的修改可能会丢失。")) return;
+
+  blocks = [];
+  currentIndex = 0;
+  currentFilter = "all";
+  isContentHidden = false;
+  reviewMode = false;
+  reviewQueue = [];
+  completedChapterNotified = [];
+  currentBookId = null;
+  sourceText.value = "";
+  bookTitleInput.value = "";
+  renderAll();
 });
 promptChoiceBtn.addEventListener("click", () => {
   generatePrompt("choice");
@@ -480,6 +519,7 @@ function renderAll() {
   renderTree();
   renderCard();
   renderProgressPanel();
+  renderBookshelf();
 }
 
 function renderStats() {
@@ -858,31 +898,53 @@ function getStatusIcon(status) {
 }
 
 function saveData() {
-  const data = {
-    sourceText: sourceText.value,
-    blocks,
-    currentIndex,
-    currentFilter,
-    reviewMode,
-    reviewQueue,
-    completedChapterNotified
-  };
+  const data = getCurrentBookData();
 
+  // 保留一个“最近打开”的工作区，兼容旧逻辑
   localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+
+  // 如果当前已经属于某本复习本，则同步更新书架中的这本书
+  if (currentBookId) {
+    const index = books.findIndex(book => book.id === currentBookId);
+
+    if (index !== -1) {
+      books[index].title = bookTitleInput.value.trim() || books[index].title;
+      books[index].updatedAt = new Date().toISOString();
+      books[index].data = data;
+      saveBookshelf();
+      renderBookshelf();
+    }
+  }
 }
 function loadData() {
+  loadBookshelf();
+
+  const shelfRaw = localStorage.getItem(BOOKSHELF_KEY);
+
+  if (shelfRaw) {
+    try {
+      const shelf = JSON.parse(shelfRaw);
+      currentBookId = shelf.currentBookId || null;
+
+      const currentBook = books.find(book => book.id === currentBookId);
+
+      if (currentBook) {
+        applyBookData(currentBook.data);
+        bookTitleInput.value = currentBook.title || "";
+        return;
+      }
+    } catch (error) {
+      console.error("读取书架失败：", error);
+    }
+  }
+
+  // 兼容旧版本：如果没有书架，就读取原来的单本记录
   const raw = localStorage.getItem(STORAGE_KEY);
   if (!raw) return;
 
   try {
     const data = JSON.parse(raw);
-    sourceText.value = data.sourceText || "";
-    blocks = data.blocks || [];
-    currentIndex = data.currentIndex || 0;
-    currentFilter = data.currentFilter || "all";
-    reviewMode = data.reviewMode || false;
-    reviewQueue = data.reviewQueue || [];
-    completedChapterNotified = data.completedChapterNotified || [];
+    applyBookData(data);
   } catch (error) {
     console.error("读取本地记录失败：", error);
   }
@@ -1025,6 +1087,214 @@ function applyScoreToCurrentBlock() {
 
   saveData();
   renderAll();
+}
+function getCurrentBookData() {
+  return {
+    sourceText: sourceText.value,
+    blocks,
+    currentIndex,
+    currentFilter,
+    reviewMode,
+    reviewQueue,
+    completedChapterNotified
+  };
+}
+
+function applyBookData(data) {
+  sourceText.value = data.sourceText || "";
+  blocks = data.blocks || [];
+  currentIndex = data.currentIndex || 0;
+  currentFilter = data.currentFilter || "all";
+  reviewMode = data.reviewMode || false;
+  reviewQueue = data.reviewQueue || [];
+  completedChapterNotified = data.completedChapterNotified || [];
+  isContentHidden = false;
+}
+
+function loadBookshelf() {
+  const raw = localStorage.getItem(BOOKSHELF_KEY);
+
+  if (!raw) {
+    books = [];
+    currentBookId = null;
+    return;
+  }
+
+  try {
+    const shelf = JSON.parse(raw);
+    books = shelf.books || [];
+    currentBookId = shelf.currentBookId || null;
+  } catch (error) {
+    console.error("读取书架失败：", error);
+    books = [];
+    currentBookId = null;
+  }
+}
+
+function saveBookshelf() {
+  const shelf = {
+    books,
+    currentBookId
+  };
+
+  localStorage.setItem(BOOKSHELF_KEY, JSON.stringify(shelf));
+}
+
+function saveCurrentBookToShelf(title) {
+  const now = new Date().toISOString();
+  const data = getCurrentBookData();
+
+  if (!currentBookId) {
+    currentBookId = createId();
+  }
+
+  const existingIndex = books.findIndex(book => book.id === currentBookId);
+
+  const book = {
+    id: currentBookId,
+    title: title || "未命名复习本",
+    createdAt: existingIndex !== -1 ? books[existingIndex].createdAt : now,
+    updatedAt: now,
+    data
+  };
+
+  if (existingIndex !== -1) {
+    books[existingIndex] = book;
+  } else {
+    books.unshift(book);
+  }
+
+  bookTitleInput.value = book.title;
+  saveBookshelf();
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  renderBookshelf();
+}
+
+function openBook(bookId) {
+  const book = books.find(item => item.id === bookId);
+
+  if (!book) {
+    alert("没有找到这本复习本。");
+    return;
+  }
+
+  currentBookId = book.id;
+  applyBookData(book.data);
+  bookTitleInput.value = book.title || "";
+
+  saveBookshelf();
+  saveData();
+  renderAll();
+}
+
+function deleteBook(bookId) {
+  const book = books.find(item => item.id === bookId);
+  if (!book) return;
+
+  if (!confirm(`确定删除复习本《${book.title}》吗？这个操作不能恢复。`)) return;
+
+  books = books.filter(item => item.id !== bookId);
+
+  if (currentBookId === bookId) {
+    currentBookId = books.length > 0 ? books[0].id : null;
+
+    if (currentBookId) {
+      const nextBook = books.find(item => item.id === currentBookId);
+      applyBookData(nextBook.data);
+      bookTitleInput.value = nextBook.title || "";
+    } else {
+      blocks = [];
+      currentIndex = 0;
+      currentFilter = "all";
+      isContentHidden = false;
+      reviewMode = false;
+      reviewQueue = [];
+      completedChapterNotified = [];
+      sourceText.value = "";
+      bookTitleInput.value = "";
+    }
+  }
+
+  saveBookshelf();
+  renderAll();
+}
+
+function renderBookshelf() {
+  if (!bookList) return;
+
+  if (books.length === 0) {
+    bookList.className = "book-list empty";
+    bookList.textContent = "暂无复习本。";
+    return;
+  }
+
+  bookList.className = "book-list";
+  bookList.innerHTML = "";
+
+  books.forEach(book => {
+    const stats = calculateStats(book.data.blocks || []);
+    const updatedText = formatDateTime(book.updatedAt);
+
+    const item = document.createElement("div");
+    item.className = "book-item";
+    if (book.id === currentBookId) item.classList.add("active");
+
+    item.innerHTML = `
+      <div class="book-item-title">📘 ${book.title}</div>
+      <div class="book-item-meta">
+        总板块：${stats.total}；
+        掌握：${stats.mastered}；
+        模糊：${stats.fuzzy}；
+        不会：${stats.unknown}<br>
+        最近更新：${updatedText}
+      </div>
+      <div class="book-item-actions">
+        <button class="book-delete-btn" data-book-id="${book.id}">删除</button>
+      </div>
+    `;
+
+    item.addEventListener("click", event => {
+      if (event.target.classList.contains("book-delete-btn")) return;
+      openBook(book.id);
+    });
+
+    const deleteBtn = item.querySelector(".book-delete-btn");
+    deleteBtn.addEventListener("click", event => {
+      event.stopPropagation();
+      deleteBook(book.id);
+    });
+
+    bookList.appendChild(item);
+  });
+}
+
+function getBookTitleFromInputOrText(text) {
+  const inputTitle = bookTitleInput.value.trim();
+  if (inputTitle) return inputTitle;
+
+  const firstLine = text
+    .replace(/\r/g, "")
+    .split("\n")
+    .map(line => line.trim())
+    .find(line => line.length > 0);
+
+  return firstLine ? firstLine.slice(0, 30) : "未命名复习本";
+}
+
+function formatDateTime(isoString) {
+  if (!isoString) return "未知";
+
+  const date = new Date(isoString);
+
+  if (Number.isNaN(date.getTime())) return "未知";
+
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  const hour = String(date.getHours()).padStart(2, "0");
+  const minute = String(date.getMinutes()).padStart(2, "0");
+
+  return `${year}-${month}-${day} ${hour}:${minute}`;
 }
 loadData();
 renderAll();

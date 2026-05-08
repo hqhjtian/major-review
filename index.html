@@ -3,19 +3,37 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>专业课复习器 V1.5</title>
+  <title>专业课复习器 V1.6</title>
+  <h1>专业课复习器 V1.6</h1>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <div class="app">
     <header>
-      <h1>专业课复习器 V1.5</h1>
+      <title>专业课复习器 V1.6</title>
       <p>把整套复习资料拆成知识板块，逐块复习，记录掌握程度。</p>
     </header>
 
     <main class="layout">
       <section class="panel input-panel">
         <h2>1. 输入复习资料</h2>
+        <div class="bookshelf-box">
+  <h3>我的复习本书架</h3>
+  <p class="hint">
+    每次解析一套新资料，系统会自动保存成一本新的复习本。点击下方复习本可以继续学习。
+  </p>
+
+  <input id="bookTitleInput" class="book-title-input" placeholder="复习本名称，例如：普通心理学第一章" />
+
+  <div class="button-row">
+    <button id="saveCurrentBookBtn" class="secondary">保存当前复习本</button>
+    <button id="newBlankBookBtn" class="secondary">新建空白复习本</button>
+  </div>
+
+  <div id="bookList" class="book-list empty">
+    暂无复习本。
+  </div>
+</div>
         <p class="hint">
           建议保留标题层级，例如：一、…… / （一）…… / 1. …… / （1）……
         </p>

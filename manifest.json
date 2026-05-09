@@ -1,0 +1,19 @@
+{
+  "name": "专业课复习器",
+  "short_name": "复习器",
+  "description": "本地专业课复习、拆解、背诵和AI出题辅助工具",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f5f6fa",
+  "theme_color": "#4f46e5",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "app-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

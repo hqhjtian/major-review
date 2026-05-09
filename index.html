@@ -3,81 +3,168 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>专业课复习器 V1.6</title>
-  <h1>专业课复习器 V1.6</h1>
+  <title>专业课复习器 V1.8</title>
   <link rel="stylesheet" href="style.css" />
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#4f46e5" />
+  <link rel="icon" href="app-icon.svg" />
 </head>
 <body>
   <div class="app">
+    <!-- 页面头部：标题与简述 -->
     <header>
-      <title>专业课复习器 V1.6</title>
+      <h1>专业课复习器 V1.8</h1>
       <p>把整套复习资料拆成知识板块，逐块复习，记录掌握程度。</p>
     </header>
 
+    <nav class="mobile-nav">
+      <button class="mobile-nav-btn active-mobile-tab" data-target="input-panel">书架/导入</button>
+      <button class="mobile-nav-btn" data-target="tree-panel">目录</button>
+      <button class="mobile-nav-btn" data-target="study-panel">背诵</button>
+      <button class="mobile-nav-btn" data-target="progress-panel">统计</button>
+    </nav>
+
     <main class="layout">
-      <section class="panel input-panel">
+      <!-- 左侧面板：输入资料、书架管理、过滤与复习队列 -->
+      <section class="panel input-panel" data-panel="input-panel">
         <h2>1. 输入复习资料</h2>
+
+        <!-- 复习本书架管理 -->
         <div class="bookshelf-box">
-  <h3>我的复习本书架</h3>
-  <p class="hint">
-    每次解析一套新资料，系统会自动保存成一本新的复习本。点击下方复习本可以继续学习。
-  </p>
+          <h3>我的复习本书架</h3>
+          <p class="hint">
+            每次解析一套新资料，系统会自动保存成一本新的复习本。点击下方复习本可以继续学习。
+          </p>
 
-  <input id="bookTitleInput" class="book-title-input" placeholder="复习本名称，例如：普通心理学第一章" />
+          <input id="bookTitleInput" class="book-title-input" placeholder="复习本名称，例如：普通心理学第一章" />
+          <input id="bookSearchInput" class="book-title-input" placeholder="搜索复习本名称，例如：普心、发展、教育心理学" />
 
-  <div class="button-row">
-    <button id="saveCurrentBookBtn" class="secondary">保存当前复习本</button>
-    <button id="newBlankBookBtn" class="secondary">新建空白复习本</button>
-  </div>
+          <div class="button-row">
+            <button id="saveCurrentBookBtn" class="secondary">保存当前复习本</button>
+            <button id="newBlankBookBtn" class="secondary">新建空白复习本</button>
+          </div>
 
-  <div id="bookList" class="book-list empty">
-    暂无复习本。
-  </div>
-</div>
+          <div class="button-row">
+            <button id="exportCurrentBookBtn" class="secondary">导出当前复习本</button>
+            <button id="exportShelfBtn" class="secondary">导出整个书架</button>
+            <button id="importShelfBtn" class="secondary">导入复习本/书架</button>
+            <input id="importShelfFileInput" type="file" accept=".json" class="hidden" />
+          </div>
+
+          <div id="bookList" class="book-list empty">
+            暂无复习本。
+          </div>
+        </div>
+
         <p class="hint">
           建议保留标题层级，例如：一、…… / （一）…… / 1. …… / （1）……
         </p>
 
-        <textarea id="sourceText" placeholder="把你的专业课复习资料粘贴到这里。"></textarea>
+        <div class="parse-mode-box">
+          <label for="parseModeSelect">拆解模式：</label>
+          <select id="parseModeSelect">
+            <option value="strict">严格标题模式：适合结构规整的资料</option>
+            <option value="loose">宽松标题模式：适合标题不太规范的资料</option>
+            <option value="blank">按空行拆分：适合一段一个知识点的资料</option>
+            <option value="qa">简答题/题目式拆分：适合“题目 + 答案”资料</option>
+          </select>
+        </div>
+
+        <textarea id="sourceText" placeholder="把你的专业课复习资料粘贴到这里，或导入 Word 文档后自动填入。"></textarea>
+
+        <div class="word-import-box">
+          <h3>Word 导入</h3>
+          <p class="hint">
+            支持导入 .docx 文档。旧版 .doc 建议先用 Word/WPS 另存为 .docx。
+          </p>
+          <div class="button-row">
+            <button id="importWordBtn" class="secondary">导入 Word 文档</button>
+            <input id="wordFileInput" type="file" accept=".docx,.doc" class="hidden" />
+          </div>
+        </div>
+
+        <div class="clean-prompt-box">
+          <h3>资料整理 Prompt</h3>
+          <p class="hint">
+            适合把格式混乱的复习资料先交给 DeepSeek / ChatGPT 整理成标准层级，再导回复习器。
+          </p>
+          <div class="button-row">
+            <button id="generateCleanPromptBtn" class="secondary">生成资料整理 Prompt</button>
+            <button id="copyCleanPromptBtn" class="secondary">复制整理 Prompt</button>
+          </div>
+          <textarea id="cleanPromptOutput" class="prompt-output" placeholder="生成的资料整理 Prompt 会出现在这里。"></textarea>
+        </div>
 
         <div class="button-row">
           <button id="parseBtn">解析资料</button>
           <button id="clearBtn" class="secondary">清空全部</button>
         </div>
 
+        <div id="parsePreviewBox" class="parse-preview-box hidden">
+          <h3>拆解预览</h3>
+          <p class="hint">
+            请先检查拆出来的板块。你可以把题型说明、评分标准、目录、页码等内容设为“参考信息”或“排除不用”。
+          </p>
+
+          <div class="button-row">
+            <button id="confirmParseBtn">确认生成复习本</button>
+            <button id="cancelParseBtn" class="secondary">取消预览</button>
+          </div>
+
+          <div id="parsePreviewList" class="parse-preview-list"></div>
+        </div>
+
+        <!-- 统计卡片 -->
         <div class="stats">
           <span>总板块：<strong id="totalCount">0</strong></span>
           <span>掌握：<strong id="masteredCount">0</strong></span>
           <span>模糊：<strong id="fuzzyCount">0</strong></span>
           <span>不会：<strong id="unknownCount">0</strong></span>
         </div>
+
+        <!-- 筛选按钮组 -->
         <div class="filter-box">
-  <p class="hint">筛选复习：</p>
-  <div class="button-row">
-    <button id="filterAll" class="secondary filter-btn active-filter">全部</button>
-    <button id="filterUnknown" class="secondary filter-btn">只看不会</button>
-    <button id="filterFuzzy" class="secondary filter-btn">只看模糊</button>
-    <button id="filterMastered" class="secondary filter-btn">只看掌握</button>
-    <button id="filterNone" class="secondary filter-btn">只看未标记</button>
-  </div>
-</div>
-<div class="review-box">
-  <p class="hint">车轮式复习：</p>
-  <div class="button-row">
-    <button id="generateReviewBtn">生成今日复习队列</button>
-    <button id="exitReviewBtn" class="secondary">退出复习队列</button>
-  </div>
-  <div id="reviewSummary" class="review-summary hidden"></div>
-</div>
+          <p class="hint">筛选复习：</p>
+          <div class="button-row">
+            <button id="filterAll" class="secondary filter-btn active-filter">全部</button>
+            <button id="filterUnknown" class="secondary filter-btn">只看不会</button>
+            <button id="filterFuzzy" class="secondary filter-btn">只看模糊</button>
+            <button id="filterMastered" class="secondary filter-btn">只看掌握</button>
+            <button id="filterNone" class="secondary filter-btn">只看未标记</button>
+          </div>
+        </div>
+
+        <!-- 车轮式复习队列 -->
+        <div class="review-box">
+          <p class="hint">车轮式复习：</p>
+          <div class="button-row">
+            <button id="generateReviewBtn">生成今日复习队列</button>
+            <button id="exitReviewBtn" class="secondary">退出复习队列</button>
+          </div>
+          <div id="reviewSummary" class="review-summary hidden"></div>
+        </div>
       </section>
 
-      <section class="panel tree-panel">
+      <!-- 中部面板：结构化目录树 -->
+      <section class="panel input-panel" data-panel="input-panel">
         <h2>2. 结构目录</h2>
         <div id="treeView" class="tree empty">解析后会在这里显示目录。</div>
       </section>
 
-      <section class="panel study-panel">
+      <!-- 右侧面板：学习卡片、AI Prompt、练习录入 -->
+      <section class="panel study-panel" data-panel="study-panel">
         <h2>3. 当前学习板块</h2>
+      <div class="study-toolbar">
+  <label for="studyGranularitySelect">复习粒度：</label>
+  <select id="studyGranularitySelect">
+    <option value="leaf">最小知识点</option>
+    <option value="level1">按一级标题</option>
+    <option value="level2">按二级标题</option>
+    <option value="level3">按三级标题</option>
+  </select>
+
+  <button id="immersiveModeBtn" class="secondary">进入沉浸背诵</button>
+</div>
 
         <div id="emptyState" class="empty">
           还没有学习内容。请先在左侧粘贴资料并点击“解析资料”。
@@ -88,13 +175,13 @@
             <span id="cardIndex">0 / 0</span>
             <span id="cardStatus" class="status none">未标记</span>
           </div>
-
           <h3 id="cardTitle"></h3>
           <div id="cardPath" class="card-path"></div>
           <div id="cardContent" class="card-content"></div>
+
           <div class="button-row">
-  <button id="toggleAnswerBtn" class="secondary">隐藏内容，先背诵</button>
-</div>
+            <button id="toggleAnswerBtn" class="secondary">隐藏内容，先背诵</button>
+          </div>
 
           <div class="button-row">
             <button id="prevBtn" class="secondary">上一块</button>
@@ -110,76 +197,81 @@
           <div class="button-row">
             <button id="reviewChapterBtn">查看当前大标题完整内容</button>
           </div>
+
+          <!-- AI 出题 Prompt 区域 -->
           <div class="ai-box">
-  <h3>AI 出题 Prompt</h3>
-  <p class="hint">
-    根据当前知识点生成可复制给 DeepSeek / ChatGPT 的提示词。先不接 API，避免花钱和配置复杂。
-  </p>
+            <h3>AI 出题 Prompt</h3>
+            <p class="hint">
+              根据当前知识点生成可复制给 DeepSeek / ChatGPT 的提示词。
+            </p>
+            <div class="button-row">
+              <button id="promptChoiceBtn" class="secondary">生成选择题 Prompt</button>
+              <button id="promptBlankBtn" class="secondary">生成填空题 Prompt</button>
+              <button id="promptShortBtn" class="secondary">生成简答题 Prompt</button>
+              <button id="promptMixedBtn">生成综合自测 Prompt</button>
+            </div>
+            <textarea id="promptOutput" class="prompt-output" placeholder="生成的 Prompt 会出现在这里。"></textarea>
+            <div class="button-row">
+              <button id="copyPromptBtn" class="secondary">复制 Prompt</button>
+            </div>
+          </div>
 
-  <div class="button-row">
-    <button id="promptChoiceBtn" class="secondary">生成选择题 Prompt</button>
-    <button id="promptBlankBtn" class="secondary">生成填空题 Prompt</button>
-    <button id="promptShortBtn" class="secondary">生成简答题 Prompt</button>
-    <button id="promptMixedBtn">生成综合自测 Prompt</button>
-  </div>
+          <!-- 练习结果录入 -->
+          <div class="score-box">
+            <h3>练习结果录入</h3>
+            <p class="hint">
+              做完 AI 生成的题后，把正确率填进来，系统会自动更新这个知识点的掌握程度。
+            </p>
+            <div class="score-row">
+              <input id="scoreInput" type="number" min="0" max="100" placeholder="输入正确率，例如 75" />
+              <button id="applyScoreBtn">根据正确率更新状态</button>
+            </div>
+            <p id="scoreHint" class="hint"></p>
+          </div>
 
-  <textarea id="promptOutput" class="prompt-output" placeholder="生成的 Prompt 会出现在这里。"></textarea>
-
-  <div class="button-row">
-    <button id="copyPromptBtn" class="secondary">复制 Prompt</button>
-  </div>
-</div>
-
-<div class="score-box">
-  <h3>练习结果录入</h3>
-  <p class="hint">
-    做完 AI 生成的题后，把正确率填进来，系统会自动更新这个知识点的掌握程度。
-  </p>
-
-  <div class="score-row">
-    <input id="scoreInput" type="number" min="0" max="100" placeholder="输入正确率，例如 75" />
-    <button id="applyScoreBtn">根据正确率更新状态</button>
-  </div>
-
-  <p id="scoreHint" class="hint"></p>
-</div>
           <div id="chapterReview" class="chapter-review hidden"></div>
           <div id="chapterCompleteBox" class="chapter-complete hidden">
-  <h3 id="chapterCompleteTitle">章节完成</h3>
-  <div id="chapterCompleteStats"></div>
-
-  <div class="button-row">
-    <button id="showCompletedChapterBtn">查看整章回顾</button>
-    <button id="closeCompletedChapterBtn" class="secondary">先不看</button>
-  </div>
-</div>
+            <h3 id="chapterCompleteTitle">章节完成</h3>
+            <div id="chapterCompleteStats"></div>
+            <div class="button-row">
+              <button id="showCompletedChapterBtn">查看整章回顾</button>
+              <button id="closeCompletedChapterBtn" class="secondary">先不看</button>
+            </div>
+          </div>
         </div>
       </section>
-      <section class="panel progress-panel">
-  <h2>4. 薄弱清单与章节进度</h2>
 
-  <div class="button-row">
-    <button id="refreshProgressBtn" class="secondary">刷新统计</button>
-    <button id="jumpWeakestBtn">跳到最薄弱板块</button>
-  </div>
+      <!-- 右侧下方扩展面板：薄弱清单与章节进度 -->
+      <section class="panel progress-panel" data-panel="progress-panel">
+        <h2>4. 薄弱清单与章节进度</h2>
 
-  <div id="overallProgress" class="overall-progress empty">
-    解析资料并标记掌握程度后，这里会显示整体进度。
-  </div>
+        <div class="button-row">
+          <button id="refreshProgressBtn" class="secondary">刷新统计</button>
+          <button id="jumpWeakestBtn">跳到最薄弱板块</button>
+        </div>
 
-  <h3 class="sub-title">优先复习清单</h3>
-  <div id="weakList" class="weak-list empty">
-    暂无薄弱清单。
-  </div>
+        <div id="overallProgress" class="overall-progress empty">
+          解析资料并标记掌握程度后，这里会显示整体进度。
+        </div>
 
-  <h3 class="sub-title">按大标题统计</h3>
-  <div id="chapterStats" class="chapter-stats empty">
-    暂无章节统计。
-  </div>
-</section>
+        <h3 class="sub-title">优先复习清单</h3>
+        <div id="weakList" class="weak-list empty">
+          暂无薄弱清单。
+        </div>
+
+        <h3 class="sub-title">按大标题统计</h3>
+        <div id="chapterStats" class="chapter-stats empty">
+          暂无章节统计。
+        </div>
+      </section>
     </main>
   </div>
-
+  <script src="https://unpkg.com/mammoth/mammoth.browser.min.js"></script>
   <script src="app.js"></script>
-</body>
-</html>
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker.register("./service-worker.js");
+      });
+    }
+  </script>
+  </body>

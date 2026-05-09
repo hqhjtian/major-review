@@ -2146,9 +2146,10 @@ function importWordFile(file) {
   reader.onload = event => {
     const arrayBuffer = event.target.result;
 
-    mammoth.extractRawText({ arrayBuffer })
+    mammoth.convertToHtml({ arrayBuffer })
       .then(result => {
-        const text = (result.value || "").trim();
+        const html = result.value || "";
+        const text = convertWordHtmlToText(html).trim();
 
         if (!text) {
           alert("没有从 Word 文档中读取到文字。这个文件可能主要是图片或扫描件。");
@@ -2171,6 +2172,65 @@ function importWordFile(file) {
   };
 
   reader.readAsArrayBuffer(file);
+}
+/** 把 mammoth 解析出来的 Word HTML 转成更适合拆解的文本 */
+function convertWordHtmlToText(html) {
+  const container = document.createElement("div");
+  container.innerHTML = html;
+
+  // 先处理表格，把表格变成较稳定的文本块
+  const tables = container.querySelectorAll("table");
+
+  tables.forEach((table, tableIndex) => {
+    const tableText = convertTableElementToText(table, tableIndex + 1);
+    const pre = document.createElement("pre");
+    pre.textContent = tableText;
+    table.replaceWith(pre);
+  });
+
+  // 处理段落、标题、列表，保留换行
+  const blockElements = container.querySelectorAll("p, h1, h2, h3, h4, h5, h6, li, pre");
+
+  const parts = [];
+
+  blockElements.forEach(element => {
+    const text = element.textContent
+      .replace(/\u00a0/g, " ")
+      .replace(/[ \t]+/g, " ")
+      .trim();
+
+    if (text) {
+      parts.push(text);
+    }
+  });
+
+  return parts.join("\n\n");
+}
+
+/** 把 HTML 表格转成文本，尽量保留行列关系 */
+function convertTableElementToText(table, tableNumber) {
+  const rows = Array.from(table.querySelectorAll("tr"));
+
+  const lines = [`【表格 ${tableNumber}】`];
+
+  rows.forEach((row, rowIndex) => {
+    const cells = Array.from(row.querySelectorAll("th, td"))
+      .map(cell => {
+        return cell.textContent
+          .replace(/\u00a0/g, " ")
+          .replace(/\s+/g, " ")
+          .trim();
+      })
+      .filter(Boolean);
+
+    if (cells.length > 0) {
+      lines.push(`第${rowIndex + 1}行：${cells.join(" ｜ ")}`);
+    }
+  });
+
+  lines.push("【表格结束】");
+
+  return lines.join("\n");
 }
 
 /** 设置手机端当前显示的功能分页 */

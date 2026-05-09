@@ -146,7 +146,7 @@
       </section>
 
       <!-- 中部面板：结构化目录树 -->
-      <section class="panel input-panel" data-panel="input-panel">
+      <section class="panel tree-panel" data-panel="tree-panel">
         <h2>2. 结构目录</h2>
         <div id="treeView" class="tree empty">解析后会在这里显示目录。</div>
       </section>
@@ -268,6 +268,7 @@
   </div>
   <script src="https://unpkg.com/mammoth/mammoth.browser.min.js"></script>
   <script src="app.js"></script>
+  <script>
     if ("serviceWorker" in navigator) {
       window.addEventListener("load", () => {
         navigator.serviceWorker.register("./service-worker.js");
